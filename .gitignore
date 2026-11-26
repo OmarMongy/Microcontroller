@@ -1,0 +1,30 @@
+# Build outputs and generated artifacts
+build/
+obj_dir/
+*.o
+*.a
+*.so
+*.vcd
+*.fst
+*.lxt
+*.lxt2
+*.wlf
+*.log
+*.tmp
+*.bak
+*.jou
+*.str
+
+# Tool-generated directories
+.sim/
+.cache/
+__pycache__/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Keep curated reports and scripts under version control.
+# Add exceptions only when a generated artifact is intentionally selected for tracking.
