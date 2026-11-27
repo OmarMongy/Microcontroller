@@ -22,7 +22,7 @@ The engineering process is supported by a multi-agent AI framework in which spec
 
 ## System Architecture
 
-![RV32I SoC Top-Level Architecture](docs/images/rv32i_soc_top_architecture.jpg)
+![RV32I SoC Top-Level Architecture](docs/diagrams/rv32i_soc_top_architecture.jpg)
 
 ### Main Components
 
@@ -64,7 +64,7 @@ APB peripheral accesses follow the project's aligned 32-bit access policy.
 
 ## AI-Assisted Engineering Framework
 
-![AI-Assisted SoC Design and Verification Workflow](docs/images/ai_soc_workflow_infographic.jpg)
+![AI-Assisted SoC Design and Verification Workflow](docs/diagrams/ai_soc_workflow_infographic.jpg)
 
 The project uses a Main Orchestrator and three specialized agents:
 
