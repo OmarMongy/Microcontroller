@@ -1,30 +1,22 @@
-# Build outputs and generated artifacts
+# Build outputs and tool-generated files
 build/
 obj_dir/
+*.vcd
+*.fst
+*.wlf
+*.vvp
 *.o
 *.a
 *.so
-*.vcd
-*.fst
-*.lxt
-*.lxt2
-*.wlf
-*.log
 *.tmp
-*.bak
-*.jou
-*.str
+*.swp
+*~
 
-# Tool-generated directories
-.sim/
+# Tool caches
 .cache/
+.venv/
 __pycache__/
 
-# Editor / OS
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
-
-# Keep curated reports and scripts under version control.
-# Add exceptions only when a generated artifact is intentionally selected for tracking.
+# Logs: keep curated logs under version control only when intentionally added
+logs/*
+!logs/.gitkeep

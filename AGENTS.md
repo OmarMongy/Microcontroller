@@ -1,262 +1,107 @@
-# AGENTS.md — AI-Assisted RISC-V SoC Project
+# Project Instructions — AI-Assisted RV32I Microcontroller SoC
 
-## 1. Project mission
+## Mission
+Design, implement, verify, and evaluate a small educational microcontroller SoC based on a single-cycle RV32I CPU. Keep the design intentionally simple. The human is the technical owner and final decision-maker.
 
-Develop a small educational microcontroller SoC using a custom RV32I CPU, instruction ROM, data RAM, an APB3 peripheral subsystem, UART, GPIO, and timer.
+## Current approved direction
+- CPU: single-cycle, 32-bit RV32I for ordinary instructions.
+- Memory organization: Harvard, with separate instruction ROM and data RAM; each is 32 KB.
+- Reset vector: `0x0000_0000`; instruction ROM must cover this address.
+- Program image: instruction ROM initialized from `.hex` or `.mem`.
+- Peripheral interconnect: AMBA APB3; UART, 8-bit GPIO, and 32-bit timer.
+- APB peripheral accesses may wait for multiple cycles; CPU holds the current instruction until completion and commits exactly once.
+- Local instruction ROM and data RAM use dedicated simple local memory interfaces, NOT APB. APB3 is for memory-mapped peripherals.
+- Clock: one shared 50 MHz clock for CPU, memories, APB bridge, and peripherals.
+- External reset: active-low asynchronous; internal reset-release behavior remains to be specified.
+- Fault policy: invalid/misaligned accesses, illegal instructions/ECALL/EBREAK, and APB `PSLVERR` produce visible fault status and halt the CPU. This is not privileged RISC-V trap support.
+- Firmware: bare-metal assembly and C. Verification firmware/test programs are authored and owned by the Verification Engineer; separate demonstration firmware may be developed later as a software/demo task.
+- Initial implementation: RTL simulation and generic synthesis; no FPGA target initially. Directed verification and SVA.
 
-The project is an experiment in disciplined AI-assisted digital hardware engineering. The goal is not merely to obtain passing simulations; it is to produce traceable specifications, independently developed verification, reproducible regression evidence, and reviewable RTL.
+## Specification authority and reference documents
+- Read `docs/specifications/SOC_SPECIFICATION_DRAFT.md` and `docs/specifications/OPEN_DECISIONS.md` first.
+- The human may add the downloaded official ARM AMBA APB specification under `docs/specifications/references/`. Treat the exact document/version supplied by the human as the protocol reference for APB behavior. Do not silently substitute APB4/AXI or assume features not present in APB3.
+- Read `docs/architecture/INITIAL_ARCHITECTURE_PROPOSAL.md` as a proposal, not a frozen contract.
+- Do not begin RTL until the human approves the detailed architecture/interface contracts and the verification plan/baseline.
 
-## 2. Non-negotiable engineering principles
+## Address map and register-map policy
+- Architect must propose separate, non-overlapping address regions for instruction ROM, data RAM, and the APB peripheral window, plus UART/GPIO/timer peripheral subranges.
+- The address-region proposal is in the current architecture task and requires explicit human approval.
+- Individual UART/GPIO/timer register offsets and bit-level register semantics are deliberately deferred to a later focused task. Do not invent or freeze them in the initial address-region proposal.
+- The Architect may optionally include clearly marked illustrative register-map examples, but they are not binding and should be omitted unless useful.
+- Harvard means separate instruction-fetch and data-access paths. Do not casually convert the design to a unified Von Neumann memory interface. Explain any proposal that changes this.
 
-1. **Specification is the source of truth.** RTL and verification must implement the same human-approved specification and interface contracts.
-2. **Independent verification.** The RTL implementation agent must not author or silently modify the verification environment used to judge its implementation.
-3. **Verification protection.** Once a verification baseline is approved, changes to testbench, assertions, reference models, expected results, or coverage require a documented reason and explicit human approval.
-4. **Human-in-the-Loop (HITL).** The human engineer owns architecture decisions, specification interpretation, approval gates, debugging direction, manual edits, and final sign-off.
-5. **Evidence over claims.** Never claim a test, lint, synthesis, or timing result unless the relevant command actually ran and its output was inspected.
-6. **Traceability.** Every meaningful RTL, verification, or specification change must be traceable to a Git commit and, where applicable, a regression run.
-7. **Controlled parallelism.** Parallel agents must have explicit task boundaries, file ownership, interface contracts, and integration points.
-8. **Token efficiency.** Give agents only the relevant specification sections and files. Prefer concise reports, avoid rereading the entire repository unnecessarily, and do not spawn agents for trivial sequential work.
-9. **No fabricated sign-off.** Generic synthesis statistics are not physical area, FPGA utilization, or timing closure. Report exactly what the tool measured.
+## Memory-interface policy
+- Instruction ROM: dedicated local instruction-fetch interface; propose its read timing and initialization behavior.
+- Data RAM: dedicated local data-memory interface with byte-write enables; propose read latency, write timing, little-endian behavior, and alignment rules.
+- APB3: used only for memory-mapped peripherals through the APB bridge.
+- The Architect must recommend the simplest local memory timing compatible with the approved single-cycle CPU behavior and generic synthesis goals. Do not assume inferred FPGA block-RAM behavior or a particular ASIC SRAM macro.
+- Any proposal that introduces extra CPU wait states for local RAM must explain the impact and request human approval.
 
-## 3. Project scope
+## Agent roles
+1. Main Orchestrator: decomposes work, assigns tasks, manages dependencies, collects reports, and presents decisions to the human.
+2. Architect: proposes microarchitecture, module hierarchy, address regions, and interface contracts. Does not implement RTL unless explicitly assigned.
+3. RTL Designer: implements only approved RTL contracts. Does not edit protected verification assets.
+4. Independent Verification Engineer: derives verification from approved requirements/contracts and owns verification test firmware, testbench, reference models, SVA, and coverage.
 
-### Initial target architecture
+## Firmware ownership
+- Verification Engineer writes small assembly and/or bare-metal C programs used as verification stimuli, including expected outcomes and test IDs. These are verification assets and must be stored separately from product/demo firmware (recommended `verification/firmware/` or an explicitly agreed equivalent).
+- The verification program author must derive expected results from the approved specification, not from observed RTL behavior. Record compiler/assembler version, flags, linker script, image-conversion command, and generated image hash/path.
+- Verification firmware is not automatically a complete user demonstration suite. Separate demo applications can be authored later under a separate software task and reviewed by the human.
+- RTL Designer must not modify verification firmware, testbench, SVA, reference models, expected-result data, or coverage assets.
+- If a firmware test exposes an ambiguity, stop and report `SPECIFICATION_AMBIGUITY`; do not resolve it by changing the expected result.
 
-- CPU: small RV32I processor designed from scratch.
-- Initial CPU microarchitecture: single-cycle, unless the human approves a change.
-- Instruction memory: ROM.
-- Data memory: RAM.
-- CPU memory interfaces: separate instruction and data interfaces for the initial implementation.
-- Interconnect: simple address decoding / memory interface logic.
-- Peripheral bus: APB3.
-- Peripherals:
-  - UART using the previously completed UART IP as a reference/reusable block, with a new APB register wrapper.
-  - GPIO, initially 8-bit.
-  - 32-bit timer/counter with compare functionality.
-- Interrupts, pipelining, caches, operating systems, DMA, and advanced bus protocols are outside the initial milestone unless explicitly approved.
+## Communication and reporting protocol
+Agents do not communicate automatically merely because their prompts say so. The Orchestrator must explicitly delegate, attach report content/paths, and collect the response using supported Antigravity orchestration features.
 
-This section is a starting scope, not a substitute for a detailed approved specification. Do not invent architectural details such as exact address maps, reset vectors, interrupt semantics, or bus timing. Propose them for human approval.
+### Required failure workflow
+1. Verification Engineer runs the approved baseline and records commands, tool versions, test IDs, logs, and results.
+2. On failure, it creates a detailed report under `regression/investigations/`.
+3. It reports to the Orchestrator; it does not change RTL or silently redefine expected behavior.
+4. Orchestrator presents report and evidence to the human.
+5. Only after explicit human authorization may Orchestrator forward the report/evidence to RTL Designer.
+6. RTL Designer investigates and submits diagnosis/proposed patch; it does not edit verification assets.
+7. Human reviews and approves/rejects the patch.
+8. After approved integration, Orchestrator requests a rerun against the same frozen baseline.
+9. Preserve the earlier failure record even if the rerun passes.
 
-## 4. Agent roles and authority
+### Failure classification
+Use: `RTL_DEFECT`, `VERIFICATION_DEFECT_SUSPECTED`, `SPECIFICATION_AMBIGUITY`, `INFRASTRUCTURE_ERROR`, `INCONCLUSIVE`, or `NOT_CLASSIFIED`. Do not claim a suspected cause is confirmed without evidence.
 
-### Main agent / orchestrator
-- Coordinates the workflow and delegates bounded tasks.
-- Maintains project status, dependencies, and concise progress reports.
-- Checks that outputs comply with specifications and file ownership.
-- Does not bypass human approval gates.
-- Does not treat subagent output as automatically correct.
+### Required reports
+- Task report: `reports/`
+- Verification run report: `regression/runs/`
+- Failure investigation: `regression/investigations/`
+- RTL change proposal: `reports/`
+- Human decision record: `docs/decisions/`
+Use `docs/templates/`. Every report identifies report ID/date, agent role, task/scope, spec/interface revision, Git commit or `UNCOMMITTED`, baseline ID where relevant, commands/tool versions, evidence paths, status, unresolved questions, and next owner/action.
 
-### Architect agent
-- Produces architecture proposals, module boundaries, interface contracts, memory map proposals, and verification planning inputs.
-- Identifies ambiguity and contradictions.
-- Does not unilaterally approve its own proposals.
-- Does not silently change an approved specification.
+## Human approval gates
+Human approval is required before freezing/changing specification, architecture, address map, interface contracts, verification baseline, protected verification assets, RTL patches, merges to `main`, or final sign-off. Approval for one action does not imply approval for later actions.
 
-### RTL design agent
-- Implements synthesizable RTL from approved specifications and interface contracts.
-- Owns only explicitly assigned RTL files.
-- May inspect verification failures as diagnostic evidence.
-- Must not edit protected TB, SVA, reference-model, expected-result, or coverage files.
-- Must report changed files, design rationale, assumptions, and unresolved issues.
+## Verification independence and protection
+- Verification derives from approved requirements/contracts, not implementation details; plan and expected behavior before inspecting RTL wherever practical.
+- Baseline IDs are immutable (e.g. `SOC_VB_001`). A changed approved baseline gets a new ID.
+- A failing test is not permission to weaken/delete/bypass it. Any suspected verification defect requires evidence and a human-approved change proposal.
 
-### Verification engineer agent
-- Independently derives test plans, testbenches, assertions, reference models, and coverage from the approved specification and interface contracts.
-- Must not use the RTL implementation as the behavioral oracle.
-- May inspect RTL later for interface integration, but must not change expected behavior to match implementation behavior.
-- Owns verification files only when explicitly assigned.
-- Must report requirements covered, scenarios tested, limitations, and unresolved ambiguities.
+## Nine engineering gates
+1. Specification & Architecture
+2. RTL Implementation
+3. Lint & Compilation
+4. Verification Development
+5. Simulation
+6. Synthesis
+7. Debugging & Fixes
+8. Regression Rerun
+9. Final Review
 
-### Execution / review responsibility
-- Lint, simulation, synthesis, and regression execution may be performed by the orchestrator or a designated execution agent.
-- Execution must use documented scripts and preserve relevant logs/reports.
-- An execution agent must not modify RTL or verification merely to make a run pass.
+Do not skip gates or claim a gate passed without evidence.
 
-## 5. File ownership policy
+## Git and file ownership
+- `main` contains human-approved integrated states; use feature branches where practical.
+- Review `git status`, `git diff`, and `git diff --staged` before commits.
+- Never run destructive Git commands or force-push without explicit approval.
+- Commit source, specs, contracts, verification assets, scripts, and curated reports; exclude generated builds, caches, and large waveforms by default.
+- Do not claim GitHub push, tests, lint, or synthesis succeeded unless verified.
 
-Default ownership (refine per milestone):
-
-| Area | Primary owner | Restrictions |
-|---|---|---|
-| `docs/specifications/` | Architect + human | Human approval required for baseline changes |
-| `docs/architecture/` | Architect | Approved architecture changes are versioned |
-| `docs/interface_contracts/` | Architect + human | Shared contract; approve before parallel RTL |
-| `rtl/` | RTL design agent | Verification agent does not edit RTL |
-| `tb/` | Verification agent | RTL agent cannot edit after freeze |
-| `sva/` | Verification agent | RTL agent cannot edit after freeze |
-| `scripts/` | Orchestrator / execution owner | Changes reviewed and versioned |
-| `reports/` | Execution owner | Generated reports must identify run and commit |
-| `regression/` | Orchestrator + human | Historical records are append-only; corrections are documented |
-| `AGENTS.md`, `.agents/` | Human / framework maintainer | Agents may propose changes, not silently rewrite rules |
-
-Instructions and directory conventions do not provide a security boundary by themselves. Use Git review, isolated branches/worktrees where available, and human review of diffs to enforce ownership.
-
-## 6. Nine engineering gates
-
-### Planning
-**Gate 1 — Specification & Architecture**
-- Read requirements and identify ambiguity.
-- Propose microarchitecture, module hierarchy, interfaces, reset/clock assumptions, memory map, and verification strategy.
-- Produce specification and interface-contract drafts.
-- Human reviews and approves the baseline before implementation.
-
-### Development
-**Gate 2 — RTL Implementation**
-- RTL agent implements only approved behavior and interfaces.
-- Verification agent works independently from the specification and contracts.
-- Keep work partitioned by module and ownership.
-
-**Gate 3 — Lint & Compilation**
-- Compile/lint RTL and verification sources as appropriate.
-- Record tool versions, commands, exit codes, warnings, and errors.
-- Do not hide or waive warnings without documented review.
-
-**Gate 4 — Verification Development**
-- Develop self-checking tests, reference models, assertions, and coverage from requirements.
-- Review requirement-to-test traceability.
-- Human reviews and freezes the verification baseline before judging the RTL.
-
-### Execution
-**Gate 5 — Simulation**
-- Run the approved test suite against the current RTL.
-- Save logs and machine-readable summaries where practical.
-- Classify failures before proposing changes.
-
-**Gate 6 — Synthesis**
-- Run the approved synthesis flow.
-- Record tool/version, script, top module, parameters, warnings, cell statistics, and structural checks.
-- Clearly distinguish generic synthesis from technology-mapped or physical implementation results.
-
-**Gate 7 — Debugging & Fixes**
-- Investigate whether the failure is an RTL defect, verification defect, specification ambiguity, or infrastructure problem.
-- RTL defects: RTL agent proposes/fixes RTL; verification remains unchanged.
-- Verification defects: document evidence and proposed correction; obtain human approval before changing protected verification.
-- Specification ambiguity: architect documents alternatives; human decides; revise specification and affected artifacts under version control.
-- If an agent is stuck, stop automated retries. Summarize evidence and ask the human for direction. The human may manually edit files; agents must inspect the updated state before resuming.
-
-**Gate 8 — Rerun**
-- Rerun the approved regression after authorized changes.
-- Record the exact commit IDs for RTL, verification, and specification.
-- Compare against the previous run and explain changed results.
-- Do not call a run a pass if it was incomplete or blocked.
-
-### Final review
-**Gate 9 — Final Review**
-- Check requirement coverage, regression status, lint, synthesis, unresolved issues, and documentation.
-- Ensure reports are reproducible and linked to exact Git revisions.
-- Human performs final sign-off.
-
-## 7. Human-in-the-Loop approval policy
-
-Human approval is required for:
-- Baseline specification and architecture.
-- Interface contracts and memory map.
-- Verification baseline freeze.
-- Any modification to frozen verification.
-- Specification interpretation or revision.
-- Significant RTL architectural changes.
-- Debugging actions that alter protected artifacts.
-- Integration milestones and final sign-off.
-
-Read-only inspection, analysis, and proposals may proceed without approval. Approval of one gate does not authorize later gates.
-
-The human can pause an agent, inspect waveforms/logs, edit RTL or documentation manually, and instruct the agent to continue from the updated files. The agent must not overwrite or revert human changes without explicit permission.
-
-## 8. Verification freeze and exception process
-
-After verification review, create a named baseline, for example `SOC_VB_001`.
-
-A frozen baseline includes:
-- Testbench sources.
-- SVA sources.
-- Reference models and scoreboards.
-- Expected results and test vectors.
-- Coverage definitions.
-- Verification plan and requirement mapping.
-
-When a failure occurs:
-1. Preserve the failing log and exact commit identifiers.
-2. Classify the issue: RTL, verification, specification, or infrastructure.
-3. Gather evidence (waveform, assertion trace, minimal reproducer, protocol analysis).
-4. If verification is suspected, propose a change separately.
-5. Human reviews and approves or rejects the change.
-6. If approved, create a new verification baseline identifier and Git commit.
-7. Rerun and record both old and new baseline identifiers.
-
-Never weaken a check solely to make the RTL pass.
-
-## 9. Git and change-management policy
-
-- Initialize and maintain the project as a Git repository.
-- `main` is the approved, integrated project history.
-- Use feature branches for independent parallel work when the human has approved the task split.
-- Do not let multiple agents edit the same files concurrently.
-- Before committing, inspect `git status` and `git diff`.
-- Use focused commits with descriptive messages.
-- Do not commit generated build products, temporary files, huge waveforms, or tool caches by default.
-- Commit source, specifications, interface contracts, scripts, and curated reports.
-- Keep regression history append-only; if an entry needs correction, add a correction note rather than silently rewriting history.
-- Every regression record must identify the Git commit(s) used.
-- Agents may prepare changes and commit proposals, but commits to `main`, merges, baseline changes, and protected-file changes require human approval.
-- Never use destructive Git commands (`reset --hard`, forced checkout, force push, branch deletion) without explicit human approval.
-- Do not amend or rewrite published history without explicit approval.
-
-### Commit message convention
-
-Use:
-- `docs: define RV32I core specification`
-- `rtl: implement instruction decoder`
-- `verify: add RV32I arithmetic tests`
-- `sva: assert APB transfer protocol`
-- `fix: correct branch target calculation`
-- `test: update approved reset test baseline`
-- `build: add regression runner`
-
-A commit message must describe the change, not claim that the change is correct.
-
-## 10. Regression tracking policy
-
-For every meaningful regression run, record:
-- Unique run ID.
-- Date/time.
-- Overall status: `PASS`, `FAIL`, `BLOCKED`, `INFRA_ERROR`, or `REVIEW_REQUIRED`.
-- Git commit hash (and separate RTL / verification / specification revisions if split).
-- Verification baseline ID.
-- Tool names and versions.
-- Commands/scripts executed.
-- Test counts: passed, failed, skipped, not run.
-- Assertion results.
-- Lint result and warning/error counts.
-- Synthesis result and relevant statistics, if run.
-- Log/report paths.
-- Short notes and linked investigation ID.
-
-A run is `BLOCKED` if an agent or workflow cannot proceed; it is not a pass or a design failure. `INFRA_ERROR` is for tool/environment/script problems. `REVIEW_REQUIRED` is for unresolved verification/specification questions.
-
-## 11. Token and context efficiency
-
-- Do not ask every agent to read the entire repository.
-- Provide only relevant files, requirement IDs, interfaces, and task scope.
-- Ask agents to inspect current state before editing.
-- Avoid repeated full-file summaries; use concise change reports.
-- Do not spawn agents for tasks that are trivial, tightly coupled, or sequential.
-- Parallelize independent modules only after interface contracts are approved.
-- Stop repeated retries when the same failure persists; escalate with evidence.
-
-## 12. Required agent completion report
-
-Every delegated task must return:
-1. Task and requirement IDs.
-2. Files read.
-3. Files created/modified.
-4. Summary of implementation or analysis.
-5. Commands executed and actual exit codes.
-6. Test/lint/synthesis results (or explicitly "not run").
-7. Assumptions and unresolved questions.
-8. Git status / proposed commit message.
-9. Risks and recommended next action.
-
-Do not claim files were committed unless Git confirms the commit.
-
-## 13. Initial repository status
-
-The project repository has been initialized but is initially empty. Do not assume any RTL, testbench, specification, or tool scripts already exist. First create the approved directory structure and project documentation, then proceed through Gate 1.
+## Efficiency and completion report
+Use the fewest agents needed; avoid parallel work with unresolved dependencies. Each task ends with status, changed files, commands/results (or `NOT_RUN`), evidence paths, Git state, unresolved questions, and next action.

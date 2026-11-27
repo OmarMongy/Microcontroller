@@ -1,1 +1,1 @@
-run_id,date_time,status,rtl_commit,verification_commit,spec_commit,verification_baseline,tool_versions,tests_passed,tests_failed,tests_skipped,assertion_errors,lint_warnings,synthesis_status,logs,reports,investigation_id,notes
+run_id,date_time,status,spec_revision,interface_revision,rtl_commit,verification_baseline,tools,command,tests_passed,tests_failed,sva_errors,report_path,log_path,author,notes

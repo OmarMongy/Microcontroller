@@ -1,8 +1,11 @@
-# Documentation structure
+# Documentation Guide
 
-- `specifications/`: approved functional and interface requirements.
-- `architecture/`: architecture proposals and approved diagrams.
-- `interface_contracts/`: module-level interface definitions shared by parallel agents.
-- `verification_plans/`: requirement-to-test planning and verification strategy.
+- `specifications/`: project requirements, open decisions, and external protocol references.
+- `specifications/references/`: human-supplied official protocol PDFs (e.g. ARM AMBA APB specification).
+- `architecture/`: proposals; not binding until human approval.
+- `interface_contracts/`: signal/timing contracts; freeze only after human approval.
+- `decisions/`: durable human decisions.
+- `verification_plans/`: independent verification plans and baseline proposals.
+- `templates/`: report and decision templates.
 
-Drafts must be clearly marked as drafts. Human approval is required before a document becomes a project baseline.
+Current decision records: `DEC-ARCH-BASELINE-001.md` and `DEC-ARCH-BASELINE-002.md`. See `START_PROJECT_PROMPT.md` for the initial Antigravity task.

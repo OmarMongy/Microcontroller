@@ -1,14 +1,11 @@
-# Regression investigations
+# Failure Investigations
 
-Create one Markdown file per issue, for example `INV_001_apb_wait_state.md`.
+Create one directory or Markdown report per investigation. Never overwrite an earlier failure report. Use `docs/templates/FAILURE_REPORT.md`.
 
-Include:
-- Investigation ID and linked regression run.
-- Exact Git commit and verification baseline.
-- Failure summary and reproduction steps.
-- Relevant log excerpts and waveform references.
-- Classification and evidence.
-- Specification requirement(s) involved.
-- Proposed fix and affected files.
-- Human decision and approval.
-- Follow-up commit and regression result.
+The Orchestrator owns report routing:
+1. Verification Engineer -> Orchestrator.
+2. Orchestrator -> Human review.
+3. Only after human approval: Orchestrator -> RTL Designer.
+4. RTL Designer -> Orchestrator with change proposal.
+5. Human approves/rejects patch.
+6. Orchestrator requests rerun against the frozen verification baseline.
