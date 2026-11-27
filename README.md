@@ -216,14 +216,7 @@ The repository is organized around RTL, verification, documentation, firmware, a
 │   ├── soc_top.sv
 │   └── rtl.f
 ├── verification/
-│   ├── tb/
-│   ├── sva/
-│   ├── firmware/
-│   └── ...
-├── demo/
-│   ├── firmware/
-│   ├── tb/
-│   └── README.md
+│   └── firmware/
 ├── docs/
 │   ├── specifications/
 │   ├── architecture/
@@ -235,7 +228,18 @@ The repository is organized around RTL, verification, documentation, firmware, a
 │       └── rv32i_soc_top_architecture.jpg
 ├── regression/
 │   └── runs/
-└── ...
+├── tb/
+├── sva/
+├── scripts/
+├── logs/
+├── reports/
+├── waveforms/
+├── .agents/
+├── .gitignore
+├── AGENTS.md
+├── LICENSE
+├── README.md
+└── START_PROJECT_PROMPT.md
 ```
 
 *The tree above highlights the main project areas; consult the repository for the exact current directory contents.*
