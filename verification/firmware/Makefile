@@ -14,6 +14,7 @@ C_FLAGS    := $(ARCH_FLAGS) $(WARN_FLAGS) -O2 -g -Iinclude
 LD_FLAGS   := $(ARCH_FLAGS) -T link.ld -Wl,--gc-sections
 
 BUILD_DIR := build
+.PRECIOUS: $(BUILD_DIR)/%.elf $(BUILD_DIR)/%.bin
 
 CORE_ASM_TESTS := VER_CORE_001 VER_CORE_002 VER_CORE_003
 C_TESTS        := VER_CORE_004
@@ -92,3 +93,28 @@ $(BUILD_DIR)/%.mem: $(BUILD_DIR)/%.elf bin2mem.py
 
 clean:
 	rm -rf $(BUILD_DIR)
+
+# --- SOC_VB_002 Peripheral Verification Targets (CON-PERIPH-001 v1.0) ---
+PERIPH_ASM_TESTS := VER_UART_001 VER_GPIO_001 VER_TIMER_001
+PERIPH_C_TESTS   := VER_PERIPH_INT_001
+
+UART_002_SUBS  := 0 1 2 3 4
+GPIO_002_SUBS  := 0 1 2
+TIMER_002_SUBS := 0 1
+
+$(BUILD_DIR)/VER_PERIPH_INT_001.elf: src/crt0_periph.S src/VER_PERIPH_INT_001.c link.ld include/verif_mailbox.inc include/periph_regs.inc | $(BUILD_DIR)
+	$(CC) $(C_FLAGS) $(LD_FLAGS) -Wl,-Map=$(BUILD_DIR)/VER_PERIPH_INT_001.map src/crt0_periph.S src/VER_PERIPH_INT_001.c -o $@
+
+$(foreach s,$(UART_002_SUBS),$(eval $(call BUILD_FAULT_RULE,VER_UART_002,$(s))))
+$(foreach s,$(GPIO_002_SUBS),$(eval $(call BUILD_FAULT_RULE,VER_GPIO_002,$(s))))
+$(foreach s,$(TIMER_002_SUBS),$(eval $(call BUILD_FAULT_RULE,VER_TIMER_002,$(s))))
+
+PERIPH_MEMS := \
+  $(addprefix $(BUILD_DIR)/,$(addsuffix .mem,$(PERIPH_ASM_TESTS) $(PERIPH_C_TESTS))) \
+  $(foreach s,$(UART_002_SUBS),$(BUILD_DIR)/VER_UART_002_sub$(s).mem) \
+  $(foreach s,$(GPIO_002_SUBS),$(BUILD_DIR)/VER_GPIO_002_sub$(s).mem) \
+  $(foreach s,$(TIMER_002_SUBS),$(BUILD_DIR)/VER_TIMER_002_sub$(s).mem)
+
+.PHONY: all-v2 periph-images
+periph-images: check-toolchain $(PERIPH_MEMS)
+all-v2: all periph-images

@@ -30,8 +30,10 @@ _start:
     bne     t2, t1, fail
 
     li      t3, 0xA5A55A5A
-    sw      t3, 0xFFC(s0)
-    lw      t4, 0xFFC(s0)
+    li      t5, 0xFFC
+    add     t5, s0, t5
+    sw      t3, 0(t5)
+    lw      t4, 0(t5)
     bne     t4, t3, fail
     ori     s1, s1, 0x1
 
@@ -44,8 +46,10 @@ _start:
     bne     t2, t1, fail
 
     li      t3, 0x0F0F0F0F
-    sw      t3, 0xFFC(s2)
-    lw      t4, 0xFFC(s2)
+    li      t5, 0xFFC
+    add     t5, s2, t5
+    sw      t3, 0(t5)
+    lw      t4, 0(t5)
     bne     t4, t3, fail
     ori     s1, s1, 0x2
 
@@ -58,8 +62,10 @@ _start:
     bne     t2, t1, fail
 
     li      t3, 0x55AA33CC
-    sw      t3, 0xFFC(s3)
-    lw      t4, 0xFFC(s3)
+    li      t5, 0xFFC
+    add     t5, s3, t5
+    sw      t3, 0(t5)
+    lw      t4, 0(t5)
     bne     t4, t3, fail
     ori     s1, s1, 0x4
 

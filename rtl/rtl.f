@@ -1,0 +1,11 @@
+rtl/soc_pkg.sv
+rtl/rst_sync.sv
+rtl/irom_local.sv
+rtl/dram_local.sv
+rtl/data_bus_decode.sv
+rtl/apb3_bridge.sv
+rtl/uart_apb.sv
+rtl/gpio_apb.sv
+rtl/timer_apb.sv
+rtl/rv32i_cpu.sv
+rtl/soc_top.sv
