@@ -230,7 +230,7 @@ The repository is organized around RTL, verification, documentation, firmware, a
 │   ├── contracts/
 │   ├── decisions/
 │   ├── reports/
-│   └── images/
+│   └── diagrams/
 │       ├── ai_soc_workflow_infographic.jpg
 │       └── rv32i_soc_top_architecture.jpg
 ├── regression/
